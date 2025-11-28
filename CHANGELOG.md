@@ -3,6 +3,8 @@
 Todas las versiones de `zbx-proxmox-storage`.  
 Formato: `Versión - Fecha - Descripción`.
 
+---
+
 ## 1.1-2 — 2025-11-28
 
 ### Cambios
