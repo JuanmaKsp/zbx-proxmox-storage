@@ -3,6 +3,41 @@
 Todas las versiones de `zbx-proxmox-storage`.  
 Formato: `Versión - Fecha - Descripción`.
 
+## 1.1-2 — 2025-11-28
+
+### Cambios
+
+- Unificación de la lógica de Proxmox VE y Proxmox Backup Server (PBS) en **un solo script**:
+  - Nuevo script: `zbx_storage_used_pct.sh`.
+  - El script **autodetecta el entorno**:
+    - Si existe `/usr/sbin/pvesm` → se asume **Proxmox VE**.
+    - Si existe `/etc/proxmox-backup/datastore.cfg` → se asume **Proxmox Backup Server (PBS)**.
+    - Si no se reconoce el entorno → devuelve `0` sin hacer nada peligroso.
+- Proxmox VE:
+  - Se mantiene el cálculo basado en `pvesm status`.
+  - Se incluyen tipos de storage: `dir`, `zfspool`, `lvm`, `lvmthin`, `btrfs`.
+  - Se excluyen storages cuyo nombre contenga `copias`.
+- Proxmox Backup Server (PBS):
+  - El cálculo de uso se basa en `df -B1 -x tmpfs -x devtmpfs`.
+  - Solo se tiene en cuenta la línea cuyo mountpoint es `/` (el filesystem raíz donde están los datastores), evitando contar `/rpool`, `/boot/efi`, etc. y duplicar espacio.
+- Nuevo fichero de salida unificado:
+  - `OUTFILE`: `/var/lib/zabbix/proxmox_storage_used_pct`.
+- Nuevo `UserParameter` único:
+  - Key: `proxmox.storage_used_pct`.
+  - Comando: `cat /var/lib/zabbix/proxmox_storage_used_pct`.
+- Nuevo cron único:
+  - `/etc/cron.d/zbx_storage_used_pct` → ejecuta `zbx_storage_used_pct.sh` cada 5 minutos.
+- El paquete queda preparado para usarse tanto en nodos Proxmox VE como en Proxmox Backup Server con el **mismo .deb** y el mismo ítem en Zabbix.
+
+### Impacto
+
+- En Zabbix:
+  - El nuevo ítem recomendado es `proxmox.storage_used_pct` (sustituye a las keys anteriores específicas de VE/PBS).
+  - Se puede usar el **mismo template** para nodos VE y PBS, o bien plantillas separadas que compartan el mismo ítem.
+- En los nodos:
+  - El script se adapta automáticamente al tipo de Proxmox.
+  - Se simplifica el despliegue: un solo cron, un solo UserParameter, un único fichero de salida.
+
 ---
 
 ## 1.1-1 — 2025-11-28
